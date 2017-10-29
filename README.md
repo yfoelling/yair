@@ -11,7 +11,7 @@ It can also executed localy without much effort.
 
 features:
   - easy to use
-  - fast Scans
+  - fast scans
   - scan public and private images
   - image security scoring - if an Image has to many vulnerabilities, yair will exit with rc 1
   - fancy outputs:
@@ -22,16 +22,19 @@ features:
 # Quick Start
 
 clone repo:
-```git clone git@github.com:yfoelling/yair.git
 ```
-install requiremnts:
-```pip install -r requirements.txt
+git clone git@github.com:yfoelling/yair.git
+```
+install requirements:
+```
+pip install -r requirements.txt
 ```
 and you are ready to go!
 
 
 # Usage
-```Usage: yair.py [options] image:tag
+```
+Usage: yair.py [options] image:tag
 
 Options:
   -h, --help            show this help message and exit
