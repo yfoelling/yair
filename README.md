@@ -13,14 +13,13 @@ features:
   - easy to use
   - fast scans
   - scan public and private images
-  - image security scoring - if an Image has to many vulnerabilities, yair will exit with rc 1
+  - image security scoring - if an Image has to many fixable vulnerabilities, yair will exit with rc 1
   - fancy outputs:
     - table output
     - json output
-    - quiet mode (only RC)
+    - quiet mode (only return code)
 
 # Quick Start
-
 clone repo:
 ```
 git clone git@github.com:yfoelling/yair.git
@@ -48,4 +47,28 @@ Options:
                         the same)
 ```
 if you dont specify a tag, it will assume you want to scan latest
+Yair will have an return code of 1, if the vulnerability score is above 379 or it has one with severity "high" or above.
 
+# Preview
+This is a previe of a scan. Normaly images will have much more vulnerabilies, so you will get a bigger table.
+"Version with fix" will be empty if the vulnerability is not fixed yet for the distributions.
+```
+./yair.py --clair=MY_CLAIR_SERVER:PORT --registry=OUR_PRIVATE_REGISTRY IMAGE:TAG
+╒════════╤════════════╤════════════════╤═════════════════════╤══════════════════════════════════════════════════════════════════╤════════════════════╕
+│ Tool   │ Severity   │ CVE name       │ Installed Version   │ Description                                                      │ Version with fix   │
+╞════════╪════════════╪════════════════╪═════════════════════╪══════════════════════════════════════════════════════════════════╪════════════════════╡
+│ wget   │ High       │ RHSA-2017:3075 │ 1.14-15.el7         │ https://access.redhat.com/errata/RHSA-2017:3075                  │ 1.14-15.el7_4.1    │
+│        │            │                │                     │                                                                  │                    │
+│        │            │                │                     │ The wget packages provide the GNU Wget file retrieval utility    │                    │
+│        │            │                │                     │ for HTTP, HTTPS, and FTP protocols. Security Fix(es): * A stack- │                    │
+│        │            │                │                     │ based and a heap-based buffer overflow flaws were found in wget  │                    │
+│        │            │                │                     │ when processing chunked encoded HTTP responses. By tricking an   │                    │
+│        │            │                │                     │ unsuspecting user into connecting to a malicious HTTP server, an │                    │
+│        │            │                │                     │ attacker could exploit these flaws to potentially execute        │                    │
+│        │            │                │                     │ arbitrary code. (CVE-2017-13089, CVE-2017-13090) Red Hat would   │                    │
+│        │            │                │                     │ like to thank the GNU Wget project for reporting these issues.   │                    │
+╘════════╧════════════╧════════════════╧═════════════════════╧══════════════════════════════════════════════════════════════════╧════════════════════╛
+
+the image "IMAGE:TAG" has an vulnerability score of 256
+```
+This scan had an return code of 1.

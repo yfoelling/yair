@@ -190,10 +190,10 @@ def output_data():
     elif output == "json":
         print(json.dumps(vuln_data))
 
-    if image_score < 379:
-        exit(0)
-    elif big_vuln:
+    if big_vuln:
         raise ValueError("the image has \"high\" vulnerabilities")
+    elif image_score < 379:
+        exit(0)
     else:
         raise ValueError("the image has to many fixable vulnerabilities")
 
