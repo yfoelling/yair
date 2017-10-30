@@ -16,8 +16,8 @@ usage = "usage: docker run yfoelling/yair [options] image:tag"
 parser = OptionParser(usage=usage)
 parser.add_option("-r", "--registry", dest="registry", default="registry.hub.docker.com", help="docker registry URL without http/https prefix")
 parser.add_option("-c", "--clair", dest="clair", default="localhost:6060", help="clair URL with port")
-parser.add_option("-o", "--output", dest="output", default="table", help="output format \"json\", \"table\", \"short-table\"")
-parser.add_option("-q", "--quiet", dest="output", action="store_const",const="quiet", help="quiet mode - only exitcode and stderr (-o quiet does the same)")
+parser.add_option("-o", "--output", dest="output", default="table", help="output format \"json\", \"table\" or \"short-table\"")
+parser.add_option("-q", "--quiet", dest="output", action="store_const",const="quiet", help="quiet mode - only exitcode")
 (options, args) = parser.parse_args()
 
 if len(args) != 1:

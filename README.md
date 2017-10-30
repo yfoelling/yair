@@ -7,7 +7,7 @@
 
 # Introduction
 Yair is an lightweight command-line-tool to interact with [Clair](https://github.com/coreos/clair).
-It is designed for the execution inside a CI Job, for example to determinate if a Image can be deployed to the production environment.
+It is designed for the execution inside a CI Job, for example to determinate if an image can be deployed to the production environment.
 
 It can also executed localy without much effort.
 
@@ -18,10 +18,9 @@ features:
   - image security scoring - if an image has to many fixable vulnerabilities, yair will have an return code of 2
   - fancy outputs:
     - table output
-		- short table
+    - short table
     - json output
     - quiet mode (only return code)
-
 
 # Usage
 ```
@@ -34,11 +33,10 @@ Options:
   -c CLAIR, --clair=CLAIR
                         clair URL with port
   -o OUTPUT, --output=OUTPUT
-                        output format "json", "table", "short-table"
-  -q, --quiet           quiet mode - only exitcode and stderr (-o quiet does
-                        the same)
+                        output format "json", "table" or "short-table"
+  -q, --quiet           quiet mode - only exitcode
 ```
-if you dont specify a tag, it will assume you want to scan latest
+if you dont specify a tag, it will assume you want to scan latest.
 Yair will have an return code of 1, if the vulnerability score is above 379 or it has one with severity "high" or above.
 
 # Preview
@@ -66,18 +64,20 @@ the image has "high" vulnerabilities
 This scan had an return code of 2.
 
 # Return codes
-If the scan exits with return code 2, then the scanned image has:
+If the scan exits with return code 2, then the scanned image has either:
 - an vulnerability with severity "high" or higher
-or
-- a score above 379 -> see [Image scoring](#image-scoring)
+or 
+- a score above 379 kD ->
 
 # Image scoring
 If an vulnerability is detected and there is already a version of the affected package with a fix, then a number will be added to the score depending on the severity:
-- "Unknown"         0
-- "Negligible"      1
-- "Low"             16
-- "Medium"          81
-- "High"            265
-- "Critical"        625
-- "Defcon1"         1296
+| severity | score |
+|----------|-------|
+| Unknown | 0 |
+| Negligible | 1 |
+| Low | 16 |
+| Medium | 81 |
+| High | 265 |
+| Critical | 625 |
+| Defcon1 | 1296 |
 
