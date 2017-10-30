@@ -4,7 +4,6 @@
 Gathers Vulnerability Information and outputs it in a fancy way :-)
 """
 
-import socket
 import re
 import sys
 import json
@@ -13,11 +12,11 @@ from tabulate import tabulate
 import textwrap
 from optparse import OptionParser
 
-usage = "usage: %prog [options] image:tag"
+usage = "usage: docker run yfoelling/yair [options] image:tag"
 parser = OptionParser(usage=usage)
 parser.add_option("-r", "--registry", dest="registry", default="registry.hub.docker.com", help="docker registry URL without http/https prefix")
 parser.add_option("-c", "--clair", dest="clair", default="localhost:6060", help="clair URL with port")
-parser.add_option("-o", "--output", dest="output", default="table", help="output format \"json\" or \"table\" or \"quiet\"")
+parser.add_option("-o", "--output", dest="output", default="table", help="output format \"json\", \"table\", \"short-table\"")
 parser.add_option("-q", "--quiet", dest="output", action="store_const",const="quiet", help="quiet mode - only exitcode and stderr (-o quiet does the same)")
 (options, args) = parser.parse_args()
 
@@ -37,12 +36,25 @@ if "/" not in image_name:
     image_name = "library/" + image_name
 
 
-def check_server(address):
-    address = "http://" + address
+def y_req(address, method, h={}, j={}):
     try:
-        requests.get(address)
-    except requests.HTTPError:
-        print("Connection to " + address + " failed")
+        if method == "get":
+            req_result = requests.get(address, headers=h)
+            req_result.raise_for_status()
+        elif method == "post":
+            req_result = requests.post(address, headers=h, json=j)
+            req_result.raise_for_status()
+        elif method == "delete":
+            req_result = requests.delete(address, headers=h)
+            req_result.raise_for_status()
+        return req_result
+    except requests.exceptions.HTTPError as err:
+        print(err)
+        exit(1)
+    except requests.exceptions.ConnectionError as err:
+        print("connection to " + address + " failed")
+        exit(1)
+
 
 
 def get_image_manifest():
@@ -50,24 +62,31 @@ def get_image_manifest():
     req_headers = {}
     req_url = "https://" + docker_registry + "/v2/" + image_name + "/manifests/" + image_tag
     req_headers['Accept'] = 'application/vnd.docker.distribution.manifest.v2+json'
-    req_result = requests.get(req_url, headers=req_headers)
-    if req_result.status_code == 401:
-        auth_header = req_result.headers['WWW-Authenticate'].split(',')
-        registry_auth = auth_header[0].replace('Bearer realm=', '').replace('"', '')
-        registry_service = auth_header[1].replace('"', '')
-        registry_scope = auth_header[2].replace('"', '')
-        req_url = registry_auth + "?" + registry_service + "&" + registry_scope + "&offline_token"
-        req_result = requests.get(req_url)
-        data = json.loads(req_result.text)
-        registry_token = "Bearer " + data['token']
-        req_headers['Authorization'] = registry_token
-
-    else:
-        registry_token = ""
+    try:
+        req_result = requests.get(req_url, headers=req_headers)
+        if req_result.status_code == 401:
+            auth_header = req_result.headers['WWW-Authenticate'].split(',')
+            registry_auth = auth_header[0].replace('Bearer realm=', '').replace('"', '')
+            registry_service = auth_header[1].replace('"', '')
+            registry_scope = auth_header[2].replace('"', '')
+            req_url = registry_auth + "?" + registry_service + "&" + registry_scope + "&offline_token"
+            req_result = y_req(req_url, "get")
+            data = json.loads(req_result.text)
+            registry_token = "Bearer " + data['token']
+            req_headers['Authorization'] = registry_token
+        else:
+            registry_token = ""
+            req_result.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        print(err)
+        exit(1)
+    except requests.exceptions.ConnectionError as err:
+        print("connection to " + address + " failed")
+        exit(1)
 
     req_url = "https://" + docker_registry + "/v2/" + image_name + "/manifests/" + image_tag
     req_headers['Accept'] = 'application/vnd.docker.distribution.manifest.v2+json'
-    req_result = requests.get(req_url, headers=req_headers)
+    req_result = y_req(req_url, "get", h=req_headers)
     if req_result.status_code == 404:
         raise ValueError("image not found")
     req_result.raise_for_status()
@@ -92,11 +111,18 @@ def get_image_layers():
         raise NotImplementedError("unknown schema version")
 
 def analyse_image():
-
     # delete old check results
-    # print("deleting old scan results")
-    req_url = "http://" + clair_server + "/v1/layers/" + layers[-1]
-    requests.delete(req_url)
+    try:
+        req_url = "http://" + clair_server + "/v1/layers/" + layers[-1]
+        req_result = requests.delete(req_url)
+        if req_result.status_code != 404:
+            req_result.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        print(err)
+        exit(1)
+    except requests.exceptions.ConnectionError as err:
+        print("connection to " + address + " failed")
+        exit(1)
 
 
     for i in range(0, layers.__len__()):
@@ -114,19 +140,15 @@ def analyse_image():
         req_url = "http://" + clair_server + "/v1/layers"
         req_headers = { 'Content-Type': 'application/json' }
 
-        status = requests.post(req_url, json = json_data, headers = req_headers)
-        status.raise_for_status()
-
+        y_req(req_url, "post", j=json_data, h=req_headers)
 
 def get_image_info():
     vuln_data = []
-    #severitys = ["Defcon1", "Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
     severitys= ["Unknown","Negligible","Low", "Medium", "High", "Critical", "Defcon1"]
 
     req_url = "http://" + clair_server + "/v1/layers/" + layers[-1] + "?features&vulnerabilities"
     req_headers = {'Content-Type': 'application/json'}
-    req_result = requests.get(req_url, headers=req_headers)
-    req_result.raise_for_status()
+    req_result = y_req(req_url, "get", h=req_headers)
 
     data = req_result.json()
     if 'Features' not in data['Layer']:
@@ -137,7 +159,7 @@ def get_image_info():
         if "Vulnerabilities" in d:
             for v in d['Vulnerabilities']:
                 vd = dict (
-                    tool_name = d['Name'],
+                    package_name = d['Name'],
                     installed_version = d['Version'],
 
                     namespace_name = v['NamespaceName'],
@@ -159,16 +181,12 @@ def get_image_info():
                     if severitys[i] == vd['cve_severity']:
                         vd['cve_severity_nr'] = i
 
-
-
     return vuln_data
 
 def output_data():
-    global image_score
     image_score = 0
     big_vuln = False
     table = []
-    headers = ["Tool", "Severity", "CVE name", "Installed Version", "Description", "Version with fix"]
     vuln_data.sort(key=lambda vuln: vuln['cve_severity_nr'], reverse=True)
 
 
@@ -178,29 +196,41 @@ def output_data():
         if vuln['cve_fixed_version'] != "":
             image_score += vuln['cve_severity_nr']**4
 
-
-
     if output == "table":
+        headers = ["Package\nInstalled Version", "CVE Name\nSeverity", "CVE Link\nCVE Description", "Version with fix"]
         for vuln in vuln_data:
             vuln['cve_desc'] = vuln['cve_link'] + "\n\n" +  textwrap.fill(vuln['cve_desc'], 64)
-            table.append([vuln['tool_name'], vuln['cve_severity'], vuln['cve_name'], vuln['installed_version'], vuln['cve_desc'], vuln['cve_fixed_version']])
-        print(tabulate(table, headers=headers, tablefmt="fancy_grid"))
-        print("\nthe image \"" + image_name + ":" + image_tag + "\" has an vulnerability score of " + str(image_score))
+            vuln['package'] = vuln['package_name'] + "\n\n" + vuln['installed_version']
+            vuln['cve'] = vuln['cve_name'] + "\n\n" + vuln['cve_severity']
+            table.append([vuln['package'], vuln['cve'], vuln['cve_desc'], vuln['cve_fixed_version']])
+        print(tabulate(table, headers=headers, tablefmt="grid"))
+
+    elif output == "short-table":
+        headers = ["Package", "CVE Name", "Severity", "Version with fix"]
+        for vuln in vuln_data:
+            table.append([vuln['package_name'], vuln['cve_name'], vuln['cve_severity'], vuln['cve_fixed_version']])
+        print(tabulate(table, headers=headers, tablefmt="psql"))
 
     elif output == "json":
         print(json.dumps(vuln_data))
 
+    elif output == "quiet":
+        if image_score < 379 and not big_vuln:
+            exit(0)
+        else:
+            exit(2)
+
+    sys.stderr.write("scan result for: " + str(args[0]) + "\n")
     if big_vuln:
-        raise ValueError("the image has \"high\" vulnerabilities")
+        sys.stderr.write("the image has \"high\" vulnerabilities\n")
+        exit(2)
     elif image_score < 379:
         exit(0)
     else:
-        raise ValueError("the image has to many fixable vulnerabilities")
-
+        sys.stderr.write("the image has to many fixable vulnerabilities\n")
+        exit(2)
 
 if __name__ == '__main__':
-    check_server(docker_registry)
-    check_server(clair_server)
     layers = get_image_layers()
     analyse_image()
     vuln_data = get_image_info()
