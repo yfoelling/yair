@@ -20,8 +20,9 @@ parser.add_option("-o", "--output", dest="output", default="table", help="output
 parser.add_option("-q", "--quiet", dest="output", action="store_const",const="quiet", help="quiet mode - only exitcode")
 (options, args) = parser.parse_args()
 
-if len(args) != 1:
-    parser.error("specify an image to scan")
+if len(args) != 1 or args[0] == "/bin/sh":
+    print >> sys.stderr, "specify an image to scan"
+    exit(1)
 
 output=options.output
 docker_registry=options.registry
@@ -49,10 +50,10 @@ def y_req(address, method, h={}, j={}):
             req_result.raise_for_status()
         return req_result
     except requests.exceptions.HTTPError as err:
-        print(err)
+        print >> sys.stderr, err
         exit(1)
     except requests.exceptions.ConnectionError as err:
-        print("connection to " + address + " failed")
+        print >> sys.stderr, "connection to " + address + " failed"
         exit(1)
 
 
@@ -220,15 +221,17 @@ def output_data():
         else:
             exit(2)
 
-    sys.stderr.write("scan result for: " + str(args[0]) + "\n")
+    print >> sys.stderr, "scan result for: " + str(args[0])
     if big_vuln:
-        sys.stderr.write("the image has \"high\" vulnerabilities\n")
+
+        print >> sys.stderr, "the image has \"high\" vulnerabilities"
         exit(2)
     elif image_score < 379:
         exit(0)
     else:
-        sys.stderr.write("the image has to many fixable vulnerabilities\n")
+        print >> sys.stderr, "the image has to many fixable vulnerabilities"
         exit(2)
+
 
 if __name__ == '__main__':
     layers = get_image_layers()
