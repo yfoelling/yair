@@ -1,11 +1,11 @@
 # Yair
 - [Introduction](#introduction)
-- [Return codes](#return-codes)
-- [Image scoring](#image-scoring)
 - [Usage](#usage)
 - [Preview](#preview)
+- [Return codes](#return-codes)
+- [Image scoring](#image-scoring)
 
-# Introduction
+## Introduction
 Yair is an lightweight command-line-tool to interact with [Clair](https://github.com/coreos/clair).
 It is designed for the execution inside a CI Job, for example to determinate if an image can be deployed to the production environment.
 
@@ -16,13 +16,13 @@ features:
   - fast scans
   - scan public and private images
   - image security scoring - if an image has to many fixable vulnerabilities, yair will have an return code of 2
-  - fancy outputs:
+  - multiple output option:
     - table output
     - short table
     - json output
-    - quiet mode (only return code)
+    - quiet mode
 
-# Usage
+## Usage
 ```
 Usage: docker run yfoelling/yair [options] image:tag
 
@@ -39,7 +39,7 @@ Options:
 if you dont specify a tag, it will assume you want to scan latest.
 Yair will have an return code of 1, if the vulnerability score is above 379 or it has one with severity "high" or above.
 
-# Preview
+## Preview
 This is a previe of a scan. Normaly images will have much more vulnerabilies, so you will get a bigger table.
 "Version with fix" will be empty if the vulnerability is not fixed yet for the distributions.
 ```
@@ -63,16 +63,17 @@ the image has "high" vulnerabilities
 ```
 This scan had an return code of 2.
 
-# Return codes
+## Return codes
 If the scan exits with return code 2, then the scanned image has either:
-- an vulnerability with severity "high" or higher
-or 
-- a score above 379 kD ->
+- an vulnerability with severity "high" or higher\
+**or** 
+- a score above 379
 
-# Image scoring
+## Image scoring
 If an vulnerability is detected and there is already a version of the affected package with a fix, then a number will be added to the score depending on the severity:
-| severity | score |
-|----------|-------|
+
+| Severity | Score |
+|---|---|
 | Unknown | 0 |
 | Negligible | 1 |
 | Low | 16 |
