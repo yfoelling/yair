@@ -122,7 +122,7 @@ def analyse_image():
         print(err)
         exit(1)
     except requests.exceptions.ConnectionError as err:
-        print("connection to " + address + " failed")
+        print("connection to " + req_url + " failed")
         exit(1)
 
 
