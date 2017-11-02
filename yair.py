@@ -10,40 +10,61 @@ import json
 import requests
 from tabulate import tabulate
 import textwrap
-from optparse import OptionParser
+import yaml
 
-usage = "usage: docker run yfoelling/yair [options] image:tag"
-parser = OptionParser(usage=usage)
-parser.add_option("-r", "--registry", dest="registry", default="registry.hub.docker.com", help="docker registry URL without http/https prefix")
-parser.add_option("-c", "--clair", dest="clair", default="localhost:6060", help="clair URL with port")
-parser.add_option("-o", "--output", dest="output", default="table", help="output format \"json\", \"table\" or \"short-table\"")
-parser.add_option("-q", "--quiet", dest="output", action="store_const",const="quiet", help="quiet mode - only exitcode")
-(options, args) = parser.parse_args()
-
-if len(args) != 1 or args[0] == "/bin/sh":
-    print >> sys.stderr, "specify an image to scan"
+try:
+    with open("/opt/config/config.yaml", 'r') as cfg:
+        config = yaml.load(cfg)
+except yaml.parser.ParserError:
+    print >> sys.stderr, "error while parsing config.yaml"
     exit(1)
 
-output=options.output
-docker_registry=options.registry
-clair_server=options.clair
+image_score_fail_on=config['fail_on']['score']
+big_vuln_fail_on=bool(config['fail_on']['big_vulnerability'])
+docker_registry="registry.hub.docker.com"
+output=config['output']['format']
+clair_server=config['clair']['host']
 try:
-    image_name, image_tag =  args[0].split(':')
-except ValueError:
-    image_name = args[0]
-    image_tag = "latest"
-
-if "/" not in image_name:
-    image_name = "library/" + image_name
+    rocket_chat_enable=True
+    rocket_hook_url = config['output']['rocketchat']['webhook-url']
+    rocket_receiver= config['output']['rocketchat']['receiver'].split(",")
+except KeyError:
+    rocket_chat_enable=False
 
 
-def y_req(address, method, h={}, j={}):
+if sys.argv.__len__() <= 1:
+    print("usage:")
+    print("     docker run yfoelling/yair [registry]image[tag]\n")
+    print("example:")
+    print("     docker run yfoelling/yair ubuntu")
+    print("     docker run yfoelling/yair myregistry.com/mynamespace/myimage:mytag")
+    exit(1)
+else:
+    args = sys.argv[1]
+
+    try:
+        image, image_tag = args.split(':')
+    except ValueError:
+        image = args
+        image_tag = "latest"
+
+    image_data = image.split('/')
+    if image_data.__len__() == 3:
+        docker_registry = image_data[0]
+        image_name = image_data[1] + "/" + image_data[2]
+    elif image_data.__len__() == 1:
+        image_name = "library/" + image
+    else:
+        image_name = image
+
+
+def y_req(address, method, h={}, data={}):
     try:
         if method == "get":
             req_result = requests.get(address, headers=h)
             req_result.raise_for_status()
         elif method == "post":
-            req_result = requests.post(address, headers=h, json=j)
+            req_result = requests.post(address, headers=h, data=data)
             req_result.raise_for_status()
         elif method == "delete":
             req_result = requests.delete(address, headers=h)
@@ -55,7 +76,6 @@ def y_req(address, method, h={}, j={}):
     except requests.exceptions.ConnectionError as err:
         print >> sys.stderr, "connection to " + address + " failed"
         exit(1)
-
 
 
 def get_image_manifest():
@@ -141,7 +161,7 @@ def analyse_image():
         req_url = "http://" + clair_server + "/v1/layers"
         req_headers = { 'Content-Type': 'application/json' }
 
-        y_req(req_url, "post", j=json_data, h=req_headers)
+        y_req(req_url, "post", data=json.dumps(json_data), h=req_headers)
 
 def get_image_info():
     vuln_data = []
@@ -184,6 +204,12 @@ def get_image_info():
 
     return vuln_data
 
+def send_to_rocket(message, emoji):
+    if rocket_chat_enable:
+        for receiver in rocket_receiver:
+            payload = {"icon_emoji": emoji, "channel": receiver, "text": message}
+            y_req(rocket_hook_url, "post", data=json.dumps(payload))
+
 def output_data():
     image_score = 0
     big_vuln = False
@@ -216,19 +242,23 @@ def output_data():
         print(json.dumps(vuln_data))
 
     elif output == "quiet":
-        if image_score < 379 and not big_vuln:
+        if big_vuln and big_vuln_fail_on:
+            exit(2)
+        elif image_score < image_score_fail_on:
             exit(0)
         else:
             exit(2)
 
-    print >> sys.stderr, "scan result for: " + str(args[0])
-    if big_vuln:
 
+    print >> sys.stderr, "scan result for: " + str(image_name) + ":" + str(image_tag)
+    if big_vuln and big_vuln_fail_on:
+        send_to_rocket("The security scan for \"" + str(image_name) + ":" + str(image_tag) + "\" has found an vulnerability with severity high or higher!", ":information_source:")
         print >> sys.stderr, "the image has \"high\" vulnerabilities"
         exit(2)
-    elif image_score < 379:
+    elif image_score < image_score_fail_on:
         exit(0)
     else:
+        send_to_rocket("The security scan for \"" + str(image_name) + ":" + str(image_tag) + "\" has found an vulnerability score of " + str(image_score) + "!", ":information_source:")
         print >> sys.stderr, "the image has to many fixable vulnerabilities"
         exit(2)
 
