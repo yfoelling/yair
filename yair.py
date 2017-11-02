@@ -13,7 +13,7 @@ import textwrap
 import yaml
 
 try:
-    with open("/opt/config/config.yaml", 'r') as cfg:
+    with open("/opt/yair/config/config.yaml", 'r') as cfg:
         config = yaml.load(cfg)
 except yaml.parser.ParserError:
     print >> sys.stderr, "error while parsing config.yaml"
