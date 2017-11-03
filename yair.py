@@ -5,6 +5,7 @@ Gathers Vulnerability Information and outputs it in a fancy way :-)
 """
 
 import re
+import os
 import sys
 import json
 import requests
@@ -18,6 +19,9 @@ try:
 except yaml.parser.ParserError:
     print >> sys.stderr, "error while parsing config.yaml"
     exit(1)
+
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 100)
+sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 100)
 
 image_score_fail_on=config['fail_on']['score']
 big_vuln_fail_on=bool(config['fail_on']['big_vulnerability'])
@@ -33,11 +37,11 @@ except KeyError:
 
 
 if sys.argv.__len__() <= 1:
-    print("usage:")
-    print("     docker run yfoelling/yair [registry]image[tag]\n")
-    print("example:")
-    print("     docker run yfoelling/yair ubuntu")
-    print("     docker run yfoelling/yair myregistry.com/mynamespace/myimage:mytag")
+    print >> sys.stderr,  "usage:"
+    print >> sys.stderr, "     docker run yfoelling/yair [registry]image[tag]\n"
+    print >> sys.stderr, "example:"
+    print >> sys.stderr, "     docker run yfoelling/yair ubuntu"
+    print >> sys.stderr, "     docker run yfoelling/yair myregistry.com/mynamespace/myimage:mytag"
     exit(1)
 else:
     args = sys.argv[1]
@@ -99,10 +103,10 @@ def get_image_manifest():
             registry_token = ""
             req_result.raise_for_status()
     except requests.exceptions.HTTPError as err:
-        print(err)
+        print >> sys.stderr, err
         exit(1)
     except requests.exceptions.ConnectionError as err:
-        print("connection to " + address + " failed")
+        print >> sys.stderr, "connection to " + address + " failed"
         exit(1)
 
     req_url = "https://" + docker_registry + "/v2/" + image_name + "/manifests/" + image_tag
@@ -139,16 +143,15 @@ def analyse_image():
         if req_result.status_code != 404:
             req_result.raise_for_status()
     except requests.exceptions.HTTPError as err:
-        print(err)
+        print >> sys.stderr, err
         exit(1)
     except requests.exceptions.ConnectionError as err:
-        print("connection to " + req_url + " failed")
+        print >> sys.stderr, "connection to " + req_url + " failed"
         exit(1)
 
 
     for i in range(0, layers.__len__()):
         json_data = { "Layer": { "Name": "", "Path": "", "Headers": { "Authorization": "" }, "ParentName": "", "Format": "" }} # json template
-        # print("uploading layer: " + layers[i])
         json_data['Layer']['Name'] = layers[i]
         json_data['Layer']['Path'] = "https://" + docker_registry + "/v2/" + image_name + "/blobs/" + layers[i]
         json_data['Layer']['Headers']['Authorization'] = registry_token
@@ -173,7 +176,7 @@ def get_image_info():
 
     data = req_result.json()
     if 'Features' not in data['Layer']:
-        print("could not find any package in the given image")
+        print >> sys.stderr, "could not find any package in the given image"
         exit(0)
     data = data['Layer']['Features']
     for d in data:
@@ -236,10 +239,10 @@ def output_data():
         headers = ["Package", "CVE Name", "Severity", "Version with fix"]
         for vuln in vuln_data:
             table.append([vuln['package_name'], vuln['cve_name'], vuln['cve_severity'], vuln['cve_fixed_version']])
-        print(tabulate(table, headers=headers, tablefmt="psql"))
+        print >> sys.stdout, tabulate(table, headers=headers, tablefmt="psql")
 
     elif output == "json":
-        print(json.dumps(vuln_data))
+        print >> sys.stdout, json.dumps(vuln_data)
 
     elif output == "quiet":
         if big_vuln and big_vuln_fail_on:
