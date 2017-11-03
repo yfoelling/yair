@@ -30,7 +30,7 @@ output=config['output']['format']
 clair_server=config['clair']['host']
 try:
     rocket_chat_enable=True
-    rocket_hook_url = config['output']['rocketchat']['webhook-url']
+    rocket_hook_url = config['output']['rocketchat']['webhook_url']
     rocket_receiver= config['output']['rocketchat']['receiver'].split(",")
 except KeyError:
     rocket_chat_enable=False
