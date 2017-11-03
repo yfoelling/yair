@@ -230,7 +230,7 @@ def output_data():
             vuln['package'] = vuln['package_name'] + "\n\n" + vuln['installed_version']
             vuln['cve'] = vuln['cve_name'] + "\n\n" + vuln['cve_severity']
             table.append([vuln['package'], vuln['cve'], vuln['cve_desc'], vuln['cve_fixed_version']])
-        print(tabulate(table, headers=headers, tablefmt="grid"))
+        print >> sys.stdout, tabulate(table, headers=headers, tablefmt="grid")
 
     elif output == "short-table":
         headers = ["Package", "CVE Name", "Severity", "Version with fix"]
