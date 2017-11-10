@@ -1,4 +1,7 @@
 # Yair
+#### **[Available on Dockerhub](https://hub.docker.com/r/yfoelling/yair/)** 
+
+## Table of contents:
 - [Introduction](#introduction)
 - [Getting started](#getting-started)
 - [Preview](#preview)
@@ -22,8 +25,6 @@ features:
     - json output
     - quiet mode
     - Rocket.Chat output
-
-#### **[View Yair on DockerHub](https://hub.docker.com/r/yfoelling/yair/)** 
 
 ## Getting started
 #### Configuration:
