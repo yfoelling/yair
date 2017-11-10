@@ -23,6 +23,8 @@ features:
     - quiet mode
     - Rocket.Chat output
 
+#### **[View Yair on DockerHub](https://hub.docker.com/r/yfoelling/yair/)** 
+
 ## Getting started
 #### Configuration:
 copy the "config.yaml.tmpl" of this repo an change it for your needs.
