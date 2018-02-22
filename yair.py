@@ -47,7 +47,7 @@ else:
     args = sys.argv[1]
 
     try:
-        image, image_tag = args.split(':')
+        image, image_tag = args.rsplit(':', 1)
     except ValueError:
         image = args
         image_tag = "latest"
