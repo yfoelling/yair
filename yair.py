@@ -62,7 +62,13 @@ else:
         image_name = image
 
 
-def y_req(address, method, h={}, data={}):
+def y_req(address, method, h=None, data=None):
+    if h is None:
+        h = {}
+
+    if data is None:
+        data = {}
+
     try:
         if method == "get":
             req_result = requests.get(address, headers=h)
