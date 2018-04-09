@@ -36,7 +36,7 @@ except KeyError:
     rocket_chat_enable=False
 
 
-if sys.argv.__len__() <= 1:
+if len(sys.argv) <= 1:
     print >> sys.stderr,  "usage:"
     print >> sys.stderr, "     docker run yfoelling/yair [registry]image[tag]\n"
     print >> sys.stderr, "example:"
@@ -53,10 +53,10 @@ else:
         image_tag = "latest"
 
     image_data = image.split('/')
-    if image_data.__len__() == 3:
+    if len(image_data) == 3:
         docker_registry = image_data[0]
         image_name = image_data[1] + "/" + image_data[2]
-    elif image_data.__len__() == 1:
+    elif len(image_data) == 1:
         image_name = "library/" + image
     else:
         image_name = image
@@ -150,7 +150,7 @@ def analyse_image():
         exit(1)
 
 
-    for i in range(0, layers.__len__()):
+    for i in range(0, len(layers)):
         json_data = { "Layer": { "Name": "", "Path": "", "Headers": { "Authorization": "" }, "ParentName": "", "Format": "" }} # json template
         json_data['Layer']['Name'] = layers[i]
         json_data['Layer']['Path'] = "https://" + docker_registry + "/v2/" + image_name + "/blobs/" + layers[i]
@@ -201,7 +201,7 @@ def get_image_info():
                     vd['cve_desc'] = ""
                 vuln_data.append(vd)
 
-                for i in range(0, severitys.__len__()):
+                for i in range(0, len(severitys)):
                     if severitys[i] == vd['cve_severity']:
                         vd['cve_severity_nr'] = i
 
