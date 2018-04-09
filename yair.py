@@ -4,6 +4,8 @@
 Gathers Vulnerability Information and outputs it in a fancy way :-)
 """
 
+from __future__ import print_function
+
 import re
 import os
 import sys
@@ -17,7 +19,7 @@ try:
     with open("/opt/yair/config/config.yaml", 'r') as cfg:
         config = yaml.load(cfg)
 except yaml.parser.ParserError:
-    print >> sys.stderr, "error while parsing config.yaml"
+    print("error while parsing config.yaml", file=sys.stderr)
     exit(1)
 
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 100)
@@ -37,11 +39,13 @@ except KeyError:
 
 
 if sys.argv.__len__() <= 1:
-    print >> sys.stderr,  "usage:"
-    print >> sys.stderr, "     docker run yfoelling/yair [registry]image[tag]\n"
-    print >> sys.stderr, "example:"
-    print >> sys.stderr, "     docker run yfoelling/yair ubuntu"
-    print >> sys.stderr, "     docker run yfoelling/yair myregistry.com/mynamespace/myimage:mytag"
+    print("usage:", file=sys.stderr)
+    print("     docker run yfoelling/yair [registry]image[tag]\n",
+          file=sys.stderr)
+    print("example:", file=sys.stderr)
+    print("     docker run yfoelling/yair ubuntu", file=sys.stderr)
+    print("     docker run yfoelling/yair "
+          "myregistry.com/mynamespace/myimage:mytag", file=sys.stderr)
     exit(1)
 else:
     args = sys.argv[1]
@@ -75,10 +79,10 @@ def y_req(address, method, h={}, data={}):
             req_result.raise_for_status()
         return req_result
     except requests.exceptions.HTTPError as err:
-        print >> sys.stderr, err
+        print(err, file=sys.stderr)
         exit(1)
     except requests.exceptions.ConnectionError as err:
-        print >> sys.stderr, "connection to " + address + " failed"
+        print("connection to {} failed".format(address), file=sys.stderr)
         exit(1)
 
 
@@ -103,10 +107,10 @@ def get_image_manifest():
             registry_token = ""
             req_result.raise_for_status()
     except requests.exceptions.HTTPError as err:
-        print >> sys.stderr, err
+        print(err, file=sys.stderr)
         exit(1)
     except requests.exceptions.ConnectionError as err:
-        print >> sys.stderr, "connection to " + address + " failed"
+        print("connection to {} failed".format(address), file=sys.stderr)
         exit(1)
 
     req_url = "https://" + docker_registry + "/v2/" + image_name + "/manifests/" + image_tag
@@ -143,10 +147,10 @@ def analyse_image():
         if req_result.status_code != 404:
             req_result.raise_for_status()
     except requests.exceptions.HTTPError as err:
-        print >> sys.stderr, err
+        print(err, file=sys.stderr)
         exit(1)
     except requests.exceptions.ConnectionError as err:
-        print >> sys.stderr, "connection to " + req_url + " failed"
+        print("connection to {} failed".format(req_url), file=sys.stderr)
         exit(1)
 
 
@@ -176,7 +180,7 @@ def get_image_info():
 
     data = req_result.json()
     if 'Features' not in data['Layer']:
-        print >> sys.stderr, "could not find any package in the given image"
+        print("could not find any package in the given image", file=sys.stderr)
         exit(0)
     data = data['Layer']['Features']
     for d in data:
@@ -233,16 +237,20 @@ def output_data():
             vuln['package'] = vuln['package_name'] + "\n\n" + vuln['installed_version']
             vuln['cve'] = vuln['cve_name'] + "\n\n" + vuln['cve_severity']
             table.append([vuln['package'], vuln['cve'], vuln['cve_desc'], vuln['cve_fixed_version']])
-        print >> sys.stdout, tabulate(table, headers=headers, tablefmt="grid")
+
+        print(tabulate(table, headers=headers, tablefmt="grid"),
+              file=sys.stdout)
 
     elif output == "short-table":
         headers = ["Package", "CVE Name", "Severity", "Version with fix"]
         for vuln in vuln_data:
             table.append([vuln['package_name'], vuln['cve_name'], vuln['cve_severity'], vuln['cve_fixed_version']])
-        print >> sys.stdout, tabulate(table, headers=headers, tablefmt="psql")
+
+        print(tabulate(table, headers=headers, tablefmt="psql"),
+              file=sys.stdout)
 
     elif output == "json":
-        print >> sys.stdout, json.dumps(vuln_data)
+        print(json.dumps(vuln_data), file=sys.stdout)
 
     elif output == "quiet":
         if big_vuln and big_vuln_fail_on:
@@ -253,16 +261,24 @@ def output_data():
             exit(2)
 
 
-    print >> sys.stderr, "scan result for: " + str(image_name) + ":" + str(image_tag)
+    print("scan result for: {}:{}".format(image_name, image_tag),
+          file=sys.stderr)
+
     if big_vuln and big_vuln_fail_on:
-        send_to_rocket("The security scan for \"" + str(image_name) + ":" + str(image_tag) + "\" has found an vulnerability with severity high or higher!", ":information_source:")
-        print >> sys.stderr, "the image has \"high\" vulnerabilities"
+        send_to_rocket('The security scan for "{}:{}" has found an '
+                       'vulnerability with severity high or higher!'
+                       .format(image_name, image_tag),
+                       ":information_source:")
+        print("the image has \"high\" vulnerabilities", file=sys.stderr)
         exit(2)
     elif image_score < image_score_fail_on:
         exit(0)
     else:
-        send_to_rocket("The security scan for \"" + str(image_name) + ":" + str(image_tag) + "\" has found an vulnerability score of " + str(image_score) + "!", ":information_source:")
-        print >> sys.stderr, "the image has to many fixable vulnerabilities"
+        send_to_rocket('The security scan for "{}:{}" has found an '
+                       'vulnerability score of {}!'
+                       .format(image_name, image_tag, image_score),
+                       ":information_source:")
+        print("the image has to many fixable vulnerabilities", file=sys.stderr)
         exit(2)
 
 
