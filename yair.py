@@ -106,7 +106,7 @@ def get_image_manifest():
         print >> sys.stderr, err
         exit(1)
     except requests.exceptions.ConnectionError as err:
-        print >> sys.stderr, "connection to " + address + " failed"
+        print >> sys.stderr, "connection to " + req_url + " failed"
         exit(1)
 
     req_url = "https://" + docker_registry + "/v2/" + image_name + "/manifests/" + image_tag
