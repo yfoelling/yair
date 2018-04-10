@@ -6,7 +6,6 @@ Gathers Vulnerability Information and outputs it in a fancy way :-)
 
 from __future__ import print_function
 
-import re
 import os
 import sys
 import json
@@ -38,7 +37,7 @@ except KeyError:
     rocket_chat_enable=False
 
 
-if sys.argv.__len__() <= 1:
+if len(sys.argv) <= 1:
     print("usage:", file=sys.stderr)
     print("     docker run yfoelling/yair [registry]image[tag]\n",
           file=sys.stderr)
@@ -46,6 +45,7 @@ if sys.argv.__len__() <= 1:
     print("     docker run yfoelling/yair ubuntu", file=sys.stderr)
     print("     docker run yfoelling/yair "
           "myregistry.com/mynamespace/myimage:mytag", file=sys.stderr)
+
     exit(1)
 else:
     args = sys.argv[1]
@@ -57,16 +57,22 @@ else:
         image_tag = "latest"
 
     image_data = image.split('/')
-    if image_data.__len__() == 3:
+    if len(image_data) == 3:
         docker_registry = image_data[0]
         image_name = image_data[1] + "/" + image_data[2]
-    elif image_data.__len__() == 1:
+    elif len(image_data) == 1:
         image_name = "library/" + image
     else:
         image_name = image
 
 
-def y_req(address, method, h={}, data={}):
+def y_req(address, method, h=None, data=None):
+    if h is None:
+        h = {}
+
+    if data is None:
+        data = {}
+
     try:
         if method == "get":
             req_result = requests.get(address, headers=h)
@@ -110,7 +116,8 @@ def get_image_manifest():
         print(err, file=sys.stderr)
         exit(1)
     except requests.exceptions.ConnectionError as err:
-        print("connection to {} failed".format(address), file=sys.stderr)
+        print("connection to {} failed".format(req_url), file=sys.stderr)
+
         exit(1)
 
     req_url = "https://" + docker_registry + "/v2/" + image_name + "/manifests/" + image_tag
@@ -154,7 +161,7 @@ def analyse_image():
         exit(1)
 
 
-    for i in range(0, layers.__len__()):
+    for i in range(0, len(layers)):
         json_data = { "Layer": { "Name": "", "Path": "", "Headers": { "Authorization": "" }, "ParentName": "", "Format": "" }} # json template
         json_data['Layer']['Name'] = layers[i]
         json_data['Layer']['Path'] = "https://" + docker_registry + "/v2/" + image_name + "/blobs/" + layers[i]
@@ -205,7 +212,7 @@ def get_image_info():
                     vd['cve_desc'] = ""
                 vuln_data.append(vd)
 
-                for i in range(0, severitys.__len__()):
+                for i in range(0, len(severitys)):
                     if severitys[i] == vd['cve_severity']:
                         vd['cve_severity_nr'] = i
 
