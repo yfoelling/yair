@@ -4,7 +4,6 @@
 Gathers Vulnerability Information and outputs it in a fancy way :-)
 """
 
-import re
 import os
 import sys
 import json
