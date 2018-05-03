@@ -62,14 +62,16 @@ Rename the customized "config.yaml.tmpl" to "config.yaml" and move it to the dir
 #### Usage:
 The config.yaml will be made accessable for yair with a readonly docker volume:
 ``` 
-docker run -v `pwd`:/opt/yair/config/:ro yfoelling/yair [registry]image[tag]
+docker run -v `pwd`:/opt/yair/config/:ro yfoelling/yair [namespace/]image[:tag]
 ```
 you can also change the source path to a fixed path where you config.yaml is located.
 
 You can scan public images and private images. if you dont specify a tag, it will assume you want to scan latest.
 ```
-docker run yfoelling/yair ubuntu
+docker run yfoelling/yair myimage
+docker run yfoelling/yair mynamespace/myimage
 docker run yfoelling/yair mynamespace/myimage:mytag
+docker run yfoelling/yair mynamespace/myimage:mytag --registry "my-registry:1234"
 ```
 
 ## Preview
