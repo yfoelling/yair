@@ -13,6 +13,7 @@ import requests
 from tabulate import tabulate
 import textwrap
 import yaml
+import argparse
 
 try:
     with open("/opt/yair/config/config.yaml", 'r') as cfg:
@@ -26,7 +27,7 @@ sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 100)
 
 image_score_fail_on=config['fail_on']['score']
 big_vuln_fail_on=bool(config['fail_on']['big_vulnerability'])
-docker_registry="registry.hub.docker.com"
+docker_registry=config['registry']['host']
 output=config['output']['format']
 clair_server=config['clair']['host']
 try:
@@ -36,34 +37,27 @@ try:
 except KeyError:
     rocket_chat_enable=False
 
+arg_parser = argparse.ArgumentParser()
+arg_parser.add_argument("--registry", help="overwrites the \"registry::host\" configfile option")
+arg_parser.add_argument("image", metavar="[namespace/]image[:tag]", help="The image you want to scan. if you provide no tag we will assume \"latest\". if you provide no namespace we will assume \"library\".")
 
-if len(sys.argv) <= 1:
-    print("usage:", file=sys.stderr)
-    print("     docker run yfoelling/yair [registry]image[tag]\n",
-          file=sys.stderr)
-    print("example:", file=sys.stderr)
-    print("     docker run yfoelling/yair ubuntu", file=sys.stderr)
-    print("     docker run yfoelling/yair "
-          "myregistry.com/mynamespace/myimage:mytag", file=sys.stderr)
+args = arg_parser.parse_args()
 
-    exit(1)
+image = args.image
+
+try:
+    image, image_tag = image.rsplit(':', 1)
+except ValueError:
+    image_tag = "latest"
+
+image_s = image.split('/')
+if len(image_s) == 1:
+    image_name = "library/" + image
+elif len(image_s) == 2:
+    image_name = image
 else:
-    args = sys.argv[1]
-
-    try:
-        image, image_tag = args.rsplit(':', 1)
-    except ValueError:
-        image = args
-        image_tag = "latest"
-
-    image_data = image.split('/')
-    if len(image_data) == 3:
-        docker_registry = image_data[0]
-        image_name = image_data[1] + "/" + image_data[2]
-    elif len(image_data) == 1:
-        image_name = "library/" + image
-    else:
-        image_name = image
+    print("image name containes slashes", file=sys.stderr)
+    exit(1)
 
 
 def y_req(address, method, h=None, data=None):
