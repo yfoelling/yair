@@ -31,6 +31,9 @@ features:
 copy the "config.yaml.tmpl" of this repo an change it for your needs.
 ```yaml
 ---
+registry:
+  host: "registry.hub.docker.com"
+
 clair:
   host: "localhost:6060"
 
@@ -46,7 +49,8 @@ fail_on:
 ```
 | Config Option | Description |
 |---|---|
-| clair::host | hostname of the Clair Server with Port
+| registry::host | hostname of the Docker Registry, can be overwritten with "--registry" Argument |
+| clair::host | hostname of the Clair Server with Port |
 | output::format | specifys the output format, can be "json", "table", "short-table" or "quiet" | 
 | output::rocketchat | Rocket.Chat ouput, leave config commented if you dont want to use it |
 | output::rocketchat::webhook_url | url to the Rocket.Chat hook you configured for this output with http/https prefix |
@@ -65,7 +69,7 @@ you can also change the source path to a fixed path where you config.yaml is loc
 You can scan public images and private images. if you dont specify a tag, it will assume you want to scan latest.
 ```
 docker run yfoelling/yair ubuntu
-docker run yfoelling/yair myregistry.com/mynamespace/myimage:mytag
+docker run yfoelling/yair mynamespace/myimage:mytag
 ```
 
 ## Preview
