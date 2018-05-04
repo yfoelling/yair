@@ -38,13 +38,22 @@ except KeyError:
     rocket_chat_enable=False
 
 arg_parser = argparse.ArgumentParser()
-arg_parser.add_argument("--registry", help="overwrites the \"registry::host\" configfile option")
-arg_parser.add_argument("image", metavar="[namespace/]image[:tag]", help="The image you want to scan. if you provide no tag we will assume \"latest\". if you provide no namespace we will assume \"library\".")
+
+arg_parser.add_argument("--no-namespace", action="store_true", dest="no_namespace", default=False,
+    help="If your image names doesnt contain the \"namespace\" and its not in the default \"library\" namespace.")
+
+arg_parser.add_argument("--registry", action="store",
+    help="Overwrites the \"registry::host\" configfile option.")
+
+arg_parser.add_argument("image", action="store",
+    help="The image you want to scan. if you provide no tag we will assume \"latest\". if you provide no namespace we will assume \"library\".")
 
 args = arg_parser.parse_args()
 
-image = args.image
+if args.registry != None:
+    docker_registry = args.registry
 
+image = args.image
 try:
     image, image_tag = image.rsplit(':', 1)
 except ValueError:
@@ -52,7 +61,10 @@ except ValueError:
 
 image_s = image.split('/')
 if len(image_s) == 1:
-    image_name = "library/" + image
+    if args.no_namespace == True:
+        image_name = image
+    else:
+        image_name = "library/" + image
 elif len(image_s) == 2:
     image_name = image
 else:
