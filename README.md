@@ -76,7 +76,7 @@ docker run yfoelling/yair mynamespace/myimage:mytag --registry "my-registry:1234
 
 ## Preview
 #### "table"
-This is a preview of a scan with output::format "table". Normally images will have many more vulnerabilies, so you will get a bigger table.
+This is a preview of a scan with output::format "table". Normally images will have many more vulnerabilities, so you will get a bigger table.
 "Version with fix" will be empty if the vulnerability has not yet been fixed by the distribution.
 ```
 +---------------------+----------------+------------------------------------------------------------------+--------------------+
