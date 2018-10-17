@@ -65,12 +65,8 @@ if len(image_s) == 1:
         image_name = image
     else:
         image_name = "library/" + image
-elif len(image_s) == 2:
+elif len(image_s) >= 2:
     image_name = image
-else:
-    print("image name containes slashes", file=sys.stderr)
-    exit(1)
-
 
 def y_req(address, method, h=None, data=None):
     if h is None:
