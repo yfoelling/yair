@@ -1,11 +1,8 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 """
 Gathers Vulnerability Information and outputs it in a fancy way :-)
 """
-
-from __future__ import print_function
-
 import os
 import sys
 import json
@@ -143,13 +140,13 @@ def get_image_manifest():
 def get_image_layers():
     manifest = get_image_manifest()
     if manifest['schemaVersion'] == 1:
-        result = map(lambda x: x['blobSum'], manifest['fsLayers'])
+        result = list(map(lambda x: x['blobSum'], manifest['fsLayers']))
         result.reverse() # schema v1 need the reversed order
         # result.remove('a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4') # layer needs to be filtered
         return result
 
     elif manifest['schemaVersion'] == 2:
-        result = map(lambda x: x['digest'], manifest['layers'])
+        result = list(map(lambda x: x['digest'], manifest['layers']))
         return result
 
     else:
