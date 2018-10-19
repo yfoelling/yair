@@ -15,29 +15,10 @@ import textwrap
 import yaml
 import argparse
 
-try:
-    with open("/opt/yair/config/config.yaml", 'r') as cfg:
-        config = yaml.load(cfg)
-except yaml.parser.ParserError:
-    print("error while parsing config.yaml", file=sys.stderr)
-    exit(1)
-
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 100)
-sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 100)
-
-image_score_fail_on=config['fail_on']['score']
-big_vuln_fail_on=bool(config['fail_on']['big_vulnerability'])
-docker_registry=config['registry']['host']
-output=config['output']['format']
-clair_server=config['clair']['host']
-try:
-    rocket_chat_enable=True
-    rocket_hook_url = config['output']['rocketchat']['webhook_url']
-    rocket_receiver= config['output']['rocketchat']['receiver'].split(",")
-except KeyError:
-    rocket_chat_enable=False
-
 arg_parser = argparse.ArgumentParser()
+
+arg_parser.add_argument("--config", action="store", dest="config_file", default="/opt/yair/config/config.yaml",
+    help="Config file location. Defaults to /opt/yair/config/config.yaml")
 
 arg_parser.add_argument("--no-namespace", action="store_true", dest="no_namespace", default=False,
     help="If your image names doesnt contain the \"namespace\" and its not in the default \"library\" namespace.")
@@ -49,6 +30,32 @@ arg_parser.add_argument("image", action="store",
     help="The image you want to scan. if you provide no tag we will assume \"latest\". if you provide no namespace we will assume \"library\".")
 
 args = arg_parser.parse_args()
+
+try:
+    with open(args.config_file, 'r') as cfg:
+        config = yaml.load(cfg)
+except yaml.parser.ParserError:
+    print("error while parsing config.yaml", file=sys.stderr)
+    exit(1)
+except FileNotFoundError:
+    print("config file \"" + args.config_file + "\" not found - exiting")
+    exit(1)
+
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 100)
+sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 100)
+
+image_score_fail_on=config['fail_on']['score']
+big_vuln_fail_on=bool(config['fail_on']['big_vulnerability'])
+docker_registry=config['registry']['host']
+output=config['output']['format']
+clair_server=config['clair']['host']
+
+try:
+    rocket_chat_enable=True
+    rocket_hook_url = config['output']['rocketchat']['webhook_url']
+    rocket_receiver= config['output']['rocketchat']['receiver'].split(",")
+except KeyError:
+    rocket_chat_enable=False
 
 if args.registry != None:
     docker_registry = args.registry
