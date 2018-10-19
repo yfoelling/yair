@@ -1,4 +1,4 @@
-FROM python:2-alpine3.6
+FROM python:3.5.6-alpine
 LABEL maintainer="yann.foelling@koeln.de"
 
 RUN mkdir -p /opt/yair/
