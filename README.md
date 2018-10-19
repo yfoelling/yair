@@ -7,6 +7,7 @@
 - [Preview](#preview)
 - [Return codes](#return-codes)
 - [Image scoring](#image-scoring)
+- [Development](#development)
 
 ## Introduction
 Yair is an lightweight command-line-tool to interact with [Clair](https://github.com/coreos/clair).
@@ -67,11 +68,18 @@ docker run -v `pwd`:/opt/yair/config/:ro yfoelling/yair [namespace/]image[:tag]
 You can also change the source path to a fixed path where your config.yaml is located.
 
 You can scan public images and private images. If you don't specify a tag, it will assume you want to scan latest.
+
+Supported arguments:
+`--config`        Config file location. Defaults to /opt/yair/config/config.yaml
+`--no-namespace`  If your image names doesnt contain the "amespace" and its not in the default "library" namespace.
+`--registry`      Overwrites the "registry::host" configfile option.
+
+Here are some examples:
 ```
-docker run yfoelling/yair myimage
-docker run yfoelling/yair mynamespace/myimage
-docker run yfoelling/yair mynamespace/myimage:mytag
-docker run yfoelling/yair mynamespace/myimage:mytag --registry "my-registry:1234"
+docker run -v `pwd`:/opt/yair/config/:ro yfoelling/yair myimage
+docker run -v `pwd`:/opt/yair/config/:ro yfoelling/yair mynamespace/myimage
+docker run -v `pwd`:/opt/yair/config/:ro yfoelling/yair mynamespace/myimage:mytag
+docker run -v `pwd`:/opt/yair/config/:ro yfoelling/yair mynamespace/myimage:mytag --registry "my-registry:1234"
 ```
 
 ## Preview
@@ -168,3 +176,24 @@ If a vulnerability is detected and there is already a version of the affected pa
 | Critical | 625 |
 | Defcon1 | 1296 |
 
+## Development
+You can run yair localy to any registry.
+
+First install python requirements:
+```
+virtualenv --python=python3 pyenv
+. pyenv/bin/activate
+pip install -r requirements.txt
+```
+Copy the config template file:
+```
+cp config.yaml.tmpl config.yaml
+```
+Now you can adapt the config to your requirements. You will need to specify a clair host.
+If you want to start your own clair locally, make sure to wait until all vulnerability-dbs got dowloaded (it takes a few hours)
+
+After you can run yair like this:
+```
+# You can change the image to whatever you want to use for testing. I use the nginx public image.
+./yair.py nginx --config config.yaml
+```
