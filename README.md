@@ -69,9 +69,9 @@ You can also change the source path to a fixed path where your config.yaml is lo
 
 You can scan public images and private images. If you don't specify a tag, it will assume you want to scan latest.
 
-Supported arguments:
-`--config`        Config file location. Defaults to /opt/yair/config/config.yaml
-`--no-namespace`  If your image names doesnt contain the "amespace" and its not in the default "library" namespace.
+Supported arguments: <br>
+`--config`        Config file location. Defaults to /opt/yair/config/config.yaml <br>
+`--no-namespace`  If your image names doesnt contain the "amespace" and its not in the default "library" namespace. <br>
 `--registry`      Overwrites the "registry::host" configfile option.
 
 Here are some examples:
